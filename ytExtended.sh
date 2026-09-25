@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 
 source header.sh; declareUserPaths
+source yt-dlpUpdate.sh
 checkInstallPackage id3v2 p7zip-full
 
 if ! (return 2>/dev/null); then
@@ -40,6 +41,9 @@ if ! (return 2>/dev/null); then
             elif [[ "$arg" == "--names" ]]; then
                 checkNeededFilesAndDirs
                 echo "$i --names"
+                return 0
+            elif [[ "$arg" == "--update" ]]; then
+                echo "$i --update"
                 return 0
             elif [[ "$arg" == "--help" ]]; then
                 echo "$i --help"
@@ -196,9 +200,12 @@ yt-dlp in mp3 format, proceeds to rename downloads' ID3v2 tags on inputted \
 metadata by the user, [DEPRICATED] archives downloaded music into .7z file.\n"
         printf "\n\t--edit \tRenames ID3v2 tags for the files placed in $downloadsDestDirPath, \
 [DEPRICATED] archives output into .7z file.\n"
+        printf "\n\t--cut [Youtube Playlist Link] \tDownloads and youtube video and splits \
+chapters on separate .mp3 files. Can be edited in same format as downloading an album afterwards.\n"
         printf "\n\t--clean \tDeletes all files produced by the script.\n"
         printf "\n\t--print \tPrints all ID3v2 tags of .mp3 files placed in $downloadsDestDirPath.\n"
         printf "\n\t--names \tPrints all file names of .mp3 files placed in $downloadsDestDirPath.\n"
+        printf "\n\t--names \tUpdates the yt-dlp.\n"
         printf "\n\t--help  \tPrints this message\n"
         printf "\n"
     }
@@ -220,7 +227,7 @@ metadata by the user, [DEPRICATED] archives downloaded music into .7z file.\n"
                 printf "\nListing downloaded song names:\n"
                 printLongAssLine
                 while read -r line; do
-                    local songName=$(echo "$line" | sed 's/[[][^]]*]//')
+                    local songName=$(echo "$line" | sed 's/\[[^]]*\]\([^[]*\)$/\1/')
                     local songName=${songName:0:-5}
                     echo $songName
                     echo $songName >> "$ytdlpSongNamesFilePath"
@@ -242,8 +249,8 @@ metadata by the user, [DEPRICATED] archives downloaded music into .7z file.\n"
                 printf "\nListing downloaded song names:\n"
                 printLongAssLine
                 while read -r line; do
-                    local songName=$(echo "$line" | sed 's/[[][^]]*]//')
-                    local songName=${songName:0:-5}
+                    local songName=$(echo "$line" | sed 's/\[[^]]*\]\([^[]*\)$/\1/')
+                    local songName=${songName:0:-4}
                     echo $songName
                     echo $songName >> "$ytdlpSongNamesFilePath"
                 done <"$ytdlpDownloadNamesFilePath"
@@ -266,6 +273,9 @@ metadata by the user, [DEPRICATED] archives downloaded music into .7z file.\n"
                 ;;
             "--names")
                 printFileNamesInDestDir
+                ;;
+            "--update")
+                updateYtDlp
                 ;;
             "--help")
                 printHelpMessage

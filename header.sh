@@ -9,8 +9,11 @@ function declareUserPaths {
         readonly projectDirName='Projects'
         readonly downloadsDirName='Downloads'
         readonly musicDirName='Music'
-        readonly appsDirName='Apps'
+        readonly archivesDirName='Archives'
         readonly scriptsDirName='Scripts'
+        readonly doomEmacsDirName='.doom.d'
+        readonly doomEmacsBackupDirName='Doom'
+        readonly dwmBackupDirName='DWM'
         
         readonly userHomeDir="/home/$userDirName"
 
@@ -18,9 +21,12 @@ function declareUserPaths {
         readonly projectDir="$userHomeDir/$projectDirName"
         readonly mainWorkDir="$userHomeDir/$workDirName"
         readonly downloadsDir="$userHomeDir/$downloadsDirName"
-        readonly appsDir="$userHomeDir/$appsDirName"
+        readonly archivesDir="$userHomeDir/$archivesDirName"
         readonly musicDir="$userHomeDir/$musicDirName"
         readonly scriptsDir="$mainWorkDir/$scriptsDirName"
+        readonly doomEmacsDir="$userHomeDir/$doomEmacsDirName"
+        readonly doomEmacsBackupDir="$mainWorkDir/$doomEmacsBackupDirName"
+        readonly dwmBackupDir="$mainWorkDir/$dwmBackupDirName"
     fi
 }
 function failCond {
@@ -48,14 +54,31 @@ function askEvalDialogue {
         fi
     done
 }
+function askExitOnNoDialogue {
+    local message="$1"; local messageOnNo="$2"
+    printf "$message(y/n)\n"
+    read ans
+    while :
+    do
+        if [[ $ans == "y" ]]; then
+            break
+        elif [[ $ans == "n" ]] ; then
+            echo "$messageOnNo"
+            exit 0
+        else
+            echo "Please enter a valid option! (y/n)"
+            read ans
+        fi
+    done   
+}
 function printAndLog {
     local message="$1"; local dumpFilePath="$2"; local overwriteFlag="$3"
     if [[ "$overwriteFlag" == "-o" ]] && [[ "$overwriteFlag" == "--overwrite" ]]; then
-        echo "$message"
-        echo "$message" > "$dumpFilePath"
+        echo -e "$message"
+        echo -e "$message" > "$dumpFilePath"
     else
-        echo "$message"
-        echo "$message" >> "$dumpFilePath"
+        echo -e "$message"
+        echo -e "$message" >> "$dumpFilePath"
     fi
 }
 function printLongAssLine {
@@ -121,4 +144,18 @@ function getOldestFile {
     local temp=$(find "$dirPath" -type f -print0 | xargs -0 stat -c "%n %Y" | sort -nk2 | head -n 1)
     temp=${temp:0:-11}
     echo $temp
+}
+function mountDriveIfNeededEvalAction {
+    local drivePartition="$1"
+    local driveDirectory="$2"
+    local evalStatement="$3"
+    if [ -d "$driveDirectory" ]; then
+        eval "$evalStatement"
+    else
+        mkdir -m 755 "$driveDirectory" 
+        sudo mount "$drivePartition" "$driveDirectory"
+        eval "$evalStatement"
+        sudo umount "$driveDirectory"
+        rm -r "$driveDirectory"
+    fi
 }
